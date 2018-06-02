@@ -1,5 +1,6 @@
 #! /bin/bash
 
+sudo apt-get install -y build-essential libsnappy-dev zlib1g-dev libbz2-dev libgflags-dev
 cd ~
 git clone https://github.com/facebook/rocksdb.git
 cd rocksdb
