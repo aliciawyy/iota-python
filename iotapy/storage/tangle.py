@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import iota
-from iotapy.storage.providers import rocksdb
 
 
 class Tangle:

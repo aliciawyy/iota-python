@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import io
 import iota
-import iotapy
 from typing import List, Dict
 from pkg_resources import resource_string
 
@@ -73,37 +71,32 @@ class Snapshot:
     SNAPSHOT_INDEX = 1
     MAX_SUPPLY = (3 ** 33 - 1) // 2
 
-
-    def __init__(self, state: Dict[iota.Hash, int] = {}, index=0, verify=False):
-        if state:
-            self.state = state
-        else:
-            self.init_from_snapshot(verify)
+    def __init__(self, state=None, index=0, verify=False):
+        self.state = state or self.get_state_from_snapshot(verify)
         self.index = index
 
-
-    def init_from_snapshot(self, verify):
-        self.snapshot_data = resource_string('iotapy.resources', 'Snapshot.txt')
-        self.snapshot_sig = resource_string('iotapy.resources', 'Snapshot.sig').splitlines()
-        self.state = {}
+    def get_state_from_snapshot(self, verify):
+        pkg = "iotapy.resources"
+        snapshot_data = resource_string(pkg, 'Snapshot.txt').splitlines()
+        snapshot_sig = resource_string(pkg, 'Snapshot.sig').splitlines()
+        state = {}
 
         # Init snapshot
         curl = iota.crypto.kerl.Kerl()
-        for line in self.snapshot_data.splitlines():
+        for line in snapshot_data:
             trits = iota.TryteString.from_bytes(line).as_trits()
 
             if verify:
                 curl.absorb(trits)
 
             key, value = line.split(b';')
-            self.state[iota.Hash(key)] = int(value)
+            state[iota.Hash(key)] = int(value)
 
-        if not self.is_consistent():
+        if not self.is_consistent(state):
             raise ValueError('Snapshot total supply or address value is bad')
 
-        # Check snapshot signature
         if not verify:
-            return
+            return state
 
         trits = []
         curl.squeeze(trits)
@@ -114,23 +107,24 @@ class Snapshot:
 
         digests = []
         for i, bundle in enumerate(bundles):
-            digests.extend(ISS.digest(mode, bundle, iota.TryteString(self.snapshot_sig[i])))
+            digests.extend(ISS.digest(mode, bundle, iota.TryteString(snapshot_sig[i])))
 
         root = ISS.get_merkle_root(mode, ISS.address(mode, digests),
-                                   iota.TryteString(self.snapshot_sig[-1]).as_trits(),
+                                   iota.TryteString(snapshot_sig[-1]).as_trits(),
                                    0, self.SNAPSHOT_INDEX, self.SNAPSHOT_PUBKEY_DEPTH)
 
         if root != iota.TryteString(self.SNAPSHOT_PUBKEY).as_trits():
             raise ValueError('Snapshot signature failed')
+        return state
 
-
-    def is_consistent(self):
-        state_value = sum(self.state.values())
+    def is_consistent(self, state=None):
+        state = state or self.state
+        state_value = sum(state.values())
         if state_value != self.MAX_SUPPLY:
             # Transaction resolves to incorrect ledger balance
             return False
 
-        if any(i < 0 for i in self.state.values()):
+        if any(i < 0 for i in state.values()):
             # Value in address is negative
             return False
 
@@ -139,12 +133,14 @@ class Snapshot:
     def diff(self, diff_state: Dict[iota.Hash, int]):
         return {
             k: v - self.state.get(k, 0) for k, v in diff_state.items() if
-                (v - self.state.get(k, 0)) != 0}
+            (v - self.state.get(k, 0)) != 0
+        }
 
     def patch(self, diff_state: Dict[iota.Hash, int], index: int):
         patch_state = {
             k: v + diff_state.get(k, 0) for k, v in self.state.items() if
-                (v + diff_state.get(k, 0)) != 0}
+            (v + diff_state.get(k, 0)) != 0
+        }
 
         for k, v in diff_state.items():
             if k not in patch_state and v > 0:
