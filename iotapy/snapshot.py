@@ -1,8 +1,12 @@
 # -*- coding: utf-8 -*-
-
 import iota
-from typing import List, Dict
+from typing import List
 from pkg_resources import resource_string
+
+
+def dict_diff(dict1, dict2):
+    all_diff = {k: v - dict2.get(k, 0) for k, v in dict1.items()}
+    return {k: v for k, v in all_diff.items() if v}
 
 
 HASH_LENGTH = 243
@@ -66,7 +70,10 @@ class ISS:
 
 
 class Snapshot:
-    SNAPSHOT_PUBKEY = 'TTXJUGKTNPOOEXSTQVVACENJOQUROXYKDRCVK9LHUXILCLABLGJTIPNF9REWHOIMEUKWQLUOKD9CZUYAC'
+    SNAPSHOT_PUBKEY = (
+        'TTXJUGKTNPOOEXSTQVVACENJOQUROXYKDRCVK9LHUXILCLA'
+        'BLGJTIPNF9REWHOIMEUKWQLUOKD9CZUYAC'
+    )
     SNAPSHOT_PUBKEY_DEPTH = 6
     SNAPSHOT_INDEX = 1
     MAX_SUPPLY = (3 ** 33 - 1) // 2
@@ -119,31 +126,17 @@ class Snapshot:
 
     def is_consistent(self, state=None):
         state = state or self.state
-        state_value = sum(state.values())
-        if state_value != self.MAX_SUPPLY:
-            # Transaction resolves to incorrect ledger balance
-            return False
+        state_values = state.values()
+        return not (sum(state_values) != self.MAX_SUPPLY or
+                    any(i < 0 for i in state_values))
 
-        if any(i < 0 for i in state.values()):
-            # Value in address is negative
-            return False
+    def diff(self, other_state):
+        return dict_diff(other_state, self.state)
 
-        return True
-
-    def diff(self, diff_state: Dict[iota.Hash, int]):
-        return {
-            k: v - self.state.get(k, 0) for k, v in diff_state.items() if
-            (v - self.state.get(k, 0)) != 0
+    def patch(self, other_state, index):
+        all_keys = set(self.state).union(other_state)
+        state = {
+            k: self.state.get(k, 0) + other_state.get(k, 0) for k in all_keys
         }
-
-    def patch(self, diff_state: Dict[iota.Hash, int], index: int):
-        patch_state = {
-            k: v + diff_state.get(k, 0) for k, v in self.state.items() if
-            (v + diff_state.get(k, 0)) != 0
-        }
-
-        for k, v in diff_state.items():
-            if k not in patch_state and v > 0:
-                patch_state[k] = v
-
-        return Snapshot(patch_state, index)
+        state = {k: v for k, v in state.items() if v > 0}
+        return Snapshot(state, index)

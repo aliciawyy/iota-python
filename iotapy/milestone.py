@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import iota
-import iotapy
 
 
 class Milestone:
@@ -18,8 +17,6 @@ class Milestone:
         bundle_validator = iota.BundleValidator(self.tangle.get_bundle(tx))
         if len(bundle_validator.bundle) == 0:
             return False
-
-
 
     def get_index(self, tx: iota.Transaction):
         v = 0

@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import iota
-import iotapy
 from typing import List
 
 
@@ -51,7 +50,7 @@ class TransactionValidator:
             return True
 
         solid = True
-        analyzed_hashes = set([EMPTY_HASH])
+        analyzed_hashes = {EMPTY_HASH}
         non_analyzed_transactions = [txh]
 
         while non_analyzed_transactions:

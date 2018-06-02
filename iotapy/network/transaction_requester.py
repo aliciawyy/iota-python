@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import iota
-import iotapy
 from typing import List
 
 

@@ -5,7 +5,6 @@ import tempfile
 import types
 import unittest
 import iota
-import iotapy
 from collections import Counter
 from iota import TransactionHash
 from iotapy.storage.providers import rocksdb

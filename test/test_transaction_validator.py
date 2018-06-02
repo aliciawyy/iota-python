@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import random
+import shutil
 import tempfile
 import unittest
 import iota

@@ -1,42 +1,53 @@
 # -*- coding: utf-8 -*-
-
-import unittest
+from unittest import TestCase, skip
 import iota
-import iotapy
+from iotapy import snapshot as ss
 
 
-snap = iotapy.snapshot.Snapshot(verify=False)
+def test_dict_diff():
+    a = dict(a=1, b=2, c=5)
+    b = dict(b=2, c=4, d=3)
+    result = ss.dict_diff(a, b)
+    assert dict(a=1, c=1) == result
 
 
-class SnapshotTest(unittest.TestCase):
+class SnapshotTest(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.snap = ss.Snapshot(verify=False)
+
     def test_snapshot_init(self):
-        self.assertTrue(snap.is_consistent())
+        assert self.snap.is_consistent()
 
     def test_snapshot_diff(self):
-        snapshot = iotapy.snapshot.Snapshot(snap.state, 0)
-        diff = snapshot.diff(self.get_modified_state(snapshot))
-        self.assertEqual(len(diff.keys()), 2)
+        snapshot = ss.Snapshot(self.snap.state, 0)
+        diff = snapshot.diff(_get_modified_state(snapshot))
+        assert 2 == len(diff.keys())
 
     def test_snapshot_patch(self):
-        snapshot = iotapy.snapshot.Snapshot(snap.state, 0)
-        diff = snapshot.diff(self.get_modified_state(snapshot))
+        snapshot = ss.Snapshot(self.snap.state, 0)
+        diff = snapshot.diff(_get_modified_state(snapshot))
 
         new_state = snapshot.patch(diff, 0)
         diff = snapshot.diff(new_state.state)
         self.assertNotEqual(len(diff), 0)
-        self.assertTrue(new_state.is_consistent())
+        assert new_state.is_consistent()
 
-    @unittest.skip('Take too long time to veirfy a snapshot')
-    def test_snapshot_init_veirfy(self):
-        iotapy.snapshot.Snapshot(verify=True)
+    @skip('Take too long time to verify a snapshot')
+    def test_snapshot_init_verify(self):
+        ss.Snapshot(verify=True)
 
-    def get_modified_state(self, snapshot):
-        h = iota.Hash('PSRQPWWIECDGDDZXHGJNMEVJNSVOSMECPPVRPEVRZFVIZYNNXZNTOTJOZNGCZNQVSPXBXTYUJUOXYASLS')
-        m = dict(snapshot.state)
 
-        if m:
-            k = next(iter(m))
-            m[h] = m[k]
-            m[k] = 0
+def _get_modified_state(snapshot):
+    h = iota.Hash(
+        'PSRQPWWIECDGDDZXHGJNMEVJNSVOSMECPPVRPEVRZFVIZYNNXZ'
+        'NTOTJOZNGCZNQVSPXBXTYUJUOXYASLS'
+    )
+    m = dict(snapshot.state)
 
-        return m
+    if m:
+        k = next(iter(m))
+        m[h] = m[k]
+        m[k] = 0
+
+    return m
