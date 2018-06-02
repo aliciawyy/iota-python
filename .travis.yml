@@ -1,0 +1,36 @@
+language: python
+
+python:
+  - "2.7"
+  - "3.5"
+  - "3.6"
+
+before_install:
+  on:
+    python: "3.5"
+  - ./scripts/install_rocksdb_deps.sh
+  - ./scripts/install_rocksdb.sh
+
+# cache:
+#  directories:
+#    - $HOME/rocksdb/
+
+install:
+  - echo $CPLUS_INCLUDE_PATH
+  - pip install -U pip
+  - pip install -r requirements.txt
+  - pip install codecov pytest pytest-cov
+
+script:
+  - pytest . -v --cov=.
+
+after_success:
+  - codecov
+
+deploy:
+  provider: pypi
+  user: $PYPI_USERNAME
+  password: $PYPI_PASSWORD
+  on:
+    python: "3.5"
+    tags: true
