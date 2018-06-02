@@ -5,8 +5,10 @@ from pkg_resources import resource_string
 
 
 def dict_diff(dict1, dict2):
-    all_diff = {k: v - dict2.get(k, 0) for k, v in dict1.items()}
-    return {k: v for k, v in all_diff.items() if v}
+    return {
+        k: v - dict2.get(k, 0) for k, v in dict1.items()
+        if v - dict2.get(k, 0) != 0
+    }
 
 
 HASH_LENGTH = 243
@@ -134,9 +136,9 @@ class Snapshot:
         return dict_diff(other_state, self.state)
 
     def patch(self, other_state, index):
-        all_keys = set(self.state).union(other_state)
         state = {
-            k: self.state.get(k, 0) + other_state.get(k, 0) for k in all_keys
+            k: self.state.get(k, 0) + other_state.get(k, 0)
+            for k in set(self.state).union(other_state)
+            if self.state.get(k, 0) + other_state.get(k, 0) > 0
         }
-        state = {k: v for k, v in state.items() if v > 0}
         return Snapshot(state, index)
