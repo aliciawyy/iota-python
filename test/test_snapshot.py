@@ -30,7 +30,7 @@ class SnapshotTest(TestCase):
 
         new_state = snapshot.patch(diff, 0)
         diff = snapshot.diff(new_state.state)
-        self.assertNotEqual(len(diff), 0)
+        assert 1 == len(diff)
         assert new_state.is_consistent()
 
     @skip('Take too long time to verify a snapshot')
@@ -43,11 +43,7 @@ def _get_modified_state(snapshot):
         'PSRQPWWIECDGDDZXHGJNMEVJNSVOSMECPPVRPEVRZFVIZYNNXZ'
         'NTOTJOZNGCZNQVSPXBXTYUJUOXYASLS'
     )
-    m = dict(snapshot.state)
-
-    if m:
-        k = next(iter(m))
-        m[h] = m[k]
-        m[k] = 0
-
-    return m
+    modified_state = dict(snapshot.state)
+    k = next(iter(modified_state))
+    modified_state[h], modified_state[k] = modified_state[k], 0
+    return modified_state

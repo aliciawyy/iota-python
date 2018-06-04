@@ -20,7 +20,6 @@ class ISS:
     NUMBER_OF_FRAGMENT_CHUNKS = 27
     MIN_TRYTE_VALUE = -13
 
-
     @classmethod
     def address(self, sponge_type, digests: List[int]):
         if not digests or len(digests) % HASH_LENGTH != 0:

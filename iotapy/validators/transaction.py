@@ -17,7 +17,7 @@ def get_transaction_weight_magnitude(tx: iota.TransactionHash):
 
 
 class TransactionValidator:
-    MIN_WEIGHT_MAGNITUE = 14
+    MIN_WEIGHT_MAGNITUDE = 14
 
     def __init__(self, tangle, tx_requester):
         self.tangle = tangle
